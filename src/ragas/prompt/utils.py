@@ -7,12 +7,14 @@ from pydantic import BaseModel
 def get_all_strings(obj: t.Any) -> list[str]:
     """
     Get all strings in the objects.
+    递归收集嵌套结构（含 Pydantic 模型、list、dict）中的全部字符串，用于多语言翻译前提取待翻译文本。
     """
     strings = []
 
     if isinstance(obj, str):
         strings.append(obj)
     elif isinstance(obj, BaseModel):
+        # Pydantic 模型：遍历 model_dump() 的每个字段值递归收集
         for field_value in obj.model_dump().values():
             strings.extend(get_all_strings(field_value))
     elif isinstance(obj, (list, tuple)):
@@ -39,6 +41,7 @@ def update_strings(obj: t.Any, old_strings: list[str], new_strings: list[str]) -
     if len(old_strings) != len(new_strings):
         raise ValueError("The number of old and new strings must be the same")
 
+    # 按位置一对一替换：old_strings[i] -> new_strings[i]
     def replace_string(s: str) -> str:
         for old, new in zip(old_strings, new_strings):
             if s == old:
@@ -71,12 +74,12 @@ def extract_json(text: str) -> str:
 
     Warning: This will identify the first json structure!"""
 
-    # check for markdown indicator; if present, start there
+    # 若存在 ```json 代码块标记，则从该位置开始查找，避免把说明文字当 JSON
     md_json_idx = text.find("```json")
     if md_json_idx != -1:
         text = text[md_json_idx:]
 
-    # search for json delimiter pairs
+    # 查找第一个 [ 或 {，以确定 JSON 的起始边界
     left_bracket_idx = text.find("[")
     left_brace_idx = text.find("{")
 
@@ -91,7 +94,7 @@ def extract_json(text: str) -> str:
     open_char = text[start_idx]
     close_char = "]" if open_char == "[" else "}"
 
-    # Initialize a count to keep track of delimiter pairs
+    # 用括号计数匹配：遇到开始符 +1，结束符 -1，归零时得到完整 JSON 子串
     count = 0
     for i, char in enumerate(text[start_idx:], start=start_idx):
         if char == open_char:
@@ -99,7 +102,7 @@ def extract_json(text: str) -> str:
         elif char == close_char:
             count -= 1
 
-        # When count returns to zero, we've found a complete structure
+        # 计数归零表示首尾括号配对，已包含完整一层 [] 或 {}
         if count == 0:
             return text[start_idx : i + 1]
 

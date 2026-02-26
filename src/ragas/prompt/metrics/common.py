@@ -7,6 +7,7 @@ import typing as t
 def statement_generator_prompt(question: str, answer: str) -> str:
     """
     V1-identical statement generator - matches PydanticPrompt.to_string() exactly.
+    将「问题+答案」转为「可独立验证的陈述」列表，供 Faithfulness / Answer Correctness 等指标使用。
 
     Args:
         question: The question being answered
@@ -15,7 +16,7 @@ def statement_generator_prompt(question: str, answer: str) -> str:
     Returns:
         V1-identical prompt string for the LLM
     """
-    # Format inputs exactly like V1's model_dump_json(indent=4, exclude_none=True)
+    # 与 V1 的 model_dump_json 格式一致，保证评估结果可比
     safe_question = json.dumps(question)
     safe_answer = json.dumps(answer)
 

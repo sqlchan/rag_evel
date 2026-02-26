@@ -116,7 +116,7 @@ class FewShotPydanticPrompt(PydanticPrompt, t.Generic[InputModel, OutputModel]):
         callbacks: t.Optional[Callbacks] = None,
         retries_left: int = 3,
     ) -> t.List[OutputModel]:
-        # Ensure get_examples returns a sequence of tuples (InputModel, OutputModel)
+        # 每次生成前按当前输入 data 从示例库中取相似度最高的 top_k 条，赋给 self.examples 供父类 to_string 使用
         self.examples = self.example_store.get_examples(data, self.top_k_for_examples)  # type: ignore
 
         # Track few-shot prompt usage

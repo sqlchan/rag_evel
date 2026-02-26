@@ -99,14 +99,15 @@ class Prompt:
         """Format the prompt with the provided variables."""
 
         prompt_parts = []
+        # 用 kwargs 填充 instruction 中的占位符（如 {question}）
         prompt_parts.append(self.instruction.format(**kwargs))
         if self.examples:
             prompt_parts.append(self._format_examples())
 
-        # Combine all parts
+        # 将 instruction 与可选示例段用双换行拼接为最终 prompt 字符串
         result = "\n\n".join(prompt_parts) if len(prompt_parts) > 1 else prompt_parts[0]
 
-        # Track prompt usage
+        # 上报使用统计（类型、是否含示例、示例数、是否有 response_model）
         track(
             PromptUsageEvent(
                 prompt_type="simple",

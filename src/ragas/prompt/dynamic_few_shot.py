@@ -78,10 +78,10 @@ class SimpleInMemoryExampleStore(SimpleExampleStore):
             # If no embedding model, return the most recent examples
             return self._examples[-top_k:]
 
-        # Get embedding for the query
+        # 将当前输入转为向量，用于与库中示例的向量做相似度比较
         query_embedding = self._get_embedding(data)
 
-        # Find most similar examples
+        # 按余弦相似度取不低于 threshold 的 top_k 条示例的下标
         indices = self._get_nearest_examples(
             query_embedding, self._embeddings_list, top_k, threshold
         )
@@ -97,11 +97,11 @@ class SimpleInMemoryExampleStore(SimpleExampleStore):
         threshold: float = 0.7,
     ) -> t.List[int]:
         """Find indices of the nearest examples based on cosine similarity."""
-        # Convert to numpy arrays for efficient computation
+        # 转为 numpy 以便向量化计算余弦相似度
         query = np.array(query_embedding)
         embed_matrix = np.array(embeddings)
 
-        # Calculate cosine similarity
+        # 余弦相似度 = 点积 / (各向量范数乘积)，加 1e-8 防除零
         similarities = np.dot(embed_matrix, query) / (
             np.linalg.norm(embed_matrix, axis=1) * np.linalg.norm(query) + 1e-8
         )
@@ -170,10 +170,10 @@ class DynamicFewShotPrompt(Prompt):
         """Format the prompt with dynamically retrieved examples."""
         prompt_parts = []
 
-        # Add instruction with variables filled in
+        # 先填充 instruction 占位符
         prompt_parts.append(self.instruction.format(**kwargs))
 
-        # Get dynamic examples if we have a store and inputs
+        # 根据当前 kwargs 从示例库中按相似度动态选取若干条，而非使用固定列表
         dynamic_examples = []
         if self.example_store and kwargs:
             dynamic_examples = self.example_store.get_examples(

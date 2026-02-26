@@ -227,6 +227,7 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
         """
         callbacks = callbacks or []
 
+        # 可选的前处理（子类可重写 process_input）
         processed_data = self.process_input(data)
         prompt_rm, prompt_cb = new_group(
             name=self.name,
@@ -234,9 +235,10 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
             callbacks=callbacks,
             metadata={"type": ChainType.RAGAS_PROMPT},
         )
+        # 将 instruction + 输出 Schema + 示例 + 当前输入 拼成完整 prompt 文本
         prompt_value = PromptValue(text=self.to_string(processed_data))
 
-        # Handle different LLM types with different interfaces
+        # 根据 LLM 类型选择调用方式：LangChain / Instructor / BaseRagasLLM
         # 1. LangChain LLMs have agenerate_prompt() for async with specific signature
         # 2. BaseRagasLLM have generate() with n, temperature, stop, callbacks
         # 3. InstructorLLM has generate()/agenerate() with only prompt and response_model
@@ -283,9 +285,10 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
             )
 
         output_models = []
+        # 使用统一解析器：提取 JSON + 解析为 output_model，失败时可重试修正格式
         parser = RagasOutputParser(pydantic_object=self.output_model)
 
-        # Handle cases where LLM returns fewer generations than requested
+        # 不同 LLM 返回的 generations 结构不同，需统一得到「本次请求的生成条数」
         if is_langchain_llm(llm) or isinstance(llm, InstructorBaseRagasLLM):
             available_generations = len(resp.generations)
         else:
@@ -313,11 +316,11 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
                 # For Ragas LLMs, all generations are in the first batch
                 output_string = resp.generations[0][i].text
             try:
-                # For the parser, we need a BaseRagasLLM, so if it's a LangChain LLM, we need to handle this
+                # Instructor / LangChain 已返回结构化结果或无法走重试逻辑，直接 JSON 解析
                 if is_langchain_llm(llm) or isinstance(llm, InstructorBaseRagasLLM):
-                    # Skip parsing retry for LangChain LLMs since parser expects BaseRagasLLM
                     answer = self.output_model.model_validate_json(output_string)
                 else:
+                    # Ragas LLM：解析失败时可调用 fix_output_format_prompt 让 LLM 修正后再解析
                     ragas_llm = t.cast(BaseRagasLLM, llm)
                     answer = await parser.parse_output_string(
                         output_string=output_string,
@@ -364,12 +367,14 @@ class PydanticPrompt(BasePrompt, t.Generic[InputModel, OutputModel]):
         Adapt the prompt to a new language.
         """
 
+        # 收集示例中所有字符串，批量调用翻译 prompt 得到目标语言版本
         strings = get_all_strings(self.examples)
         translated_strings = await translate_statements_prompt.generate(
             llm=llm,
             data=ToTranslate(target_language=target_language, statements=strings),
         )
 
+        # 用翻译结果按位置替换回 examples，保持结构不变
         translated_examples = update_strings(
             obj=self.examples,
             old_strings=strings,
@@ -533,9 +538,11 @@ class RagasOutputParser(PydanticOutputParser[OutputModel]):
     ) -> OutputModel:
         callbacks = callbacks or []
         try:
+            # 从 LLM 输出中提取第一段完整 JSON（可能被 markdown 或说明文字包裹）
             jsonstr = extract_json(output_string)
             result = super().parse(jsonstr)
         except OutputParserException:
+            # 解析失败且仍有重试次数时，用 fix_output_format_prompt 让 LLM 修正格式
             if retries_left != 0:
                 retry_rm, retry_cb = new_group(
                     name="fix_output_format",

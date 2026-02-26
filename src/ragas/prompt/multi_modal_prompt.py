@@ -250,12 +250,13 @@ class ImageTextPromptValue(PromptValue):
         Securely determines if an item is text, a valid image data URI,
         or a fetchable image URL according to policy. Returns the appropriate
         message dictionary structure or None if invalid/unsafe.
+        按顺序尝试：Base64 图片 → 允许的 URL（含 SSRF 校验）→ 可选的本地文件 → 纯文本。
         """
         if not isinstance(item, str):
             logger.warning(f"Processing non-string item as text: {type(item)}")
             return self._get_text_payload(str(item))
 
-        # 1. Check for Base64 Data URI
+        # 1. 先判断是否为 data:image/...;base64,... 形式的内嵌图片
         image_data = self._try_process_base64_uri(item)
         if image_data:
             return self._get_image_payload(
@@ -377,8 +378,8 @@ class ImageTextPromptValue(PromptValue):
                 )
                 return None
 
+            # SSRF 防护：解析 hostname 到 IP，禁止回环/内网/保留地址等
             if not self._is_safe_url_target(parsed_url.hostname):
-                # Logging is handled within _is_safe_url_target
                 return None
             # <<< SSRF CHECK END >>>
 

@@ -21,12 +21,15 @@ logger = logging.getLogger(__name__)
 
 
 class BasePrompt(ABC):
+    """所有 Prompt 的抽象基类：定义名称、语言、哈希及生成/持久化接口。"""
+
     def __init__(
         self,
         name: t.Optional[str] = None,
         language: str = "english",
         original_hash: t.Optional[str] = None,
     ):
+        # 未显式传入 name 时，使用类名的 snake_case 作为默认名称
         if name is None:
             self.name = camel_to_snake(self.__class__.__name__)
 
@@ -69,6 +72,7 @@ class BasePrompt(ABC):
         """
         Save the prompt to a file.
         """
+        # 仅保存元数据（版本、语言、原始哈希）；子类可重写以保存 instruction/examples 等
         data = {
             "ragas_version": __version__,
             "language": self.language,
@@ -168,6 +172,7 @@ class StringPrompt(BasePrompt):
         str
             The generated text.
         """
+        # 将传入的 data 字符串直接作为完整 prompt 发给 LLM，不做模板填充
         llm_result = await llm.agenerate_text(
             StringPromptValue(text=data),
             n=1,

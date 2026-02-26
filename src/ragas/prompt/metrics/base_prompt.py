@@ -104,7 +104,7 @@ class BasePrompt(ABC, t.Generic[InputModel, OutputModel]):
         Returns:
             Complete prompt string ready for LLM
         """
-        # Generate JSON schema for output
+        # 输出结构的 JSON Schema，供 LLM 按格式返回
         output_schema = json.dumps(self.output_model.model_json_schema())
 
         # Generate examples section
@@ -162,6 +162,7 @@ Output: """
         Returns:
             New prompt instance adapted to the target language
         """
+        # 从 examples 中递归收集所有字符串，用于批量翻译
         strings = get_all_strings(self.examples)
 
         if not strings:
@@ -169,7 +170,7 @@ Output: """
             new_prompt.language = target_language
             return new_prompt
 
-        # Translate all strings in one batch
+        # 调用 Instructor LLM 一次性翻译所有字符串，保证条数与顺序一致
         translated = await _translate_strings(strings, target_language, llm)
 
         # Update examples with translated strings

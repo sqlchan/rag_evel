@@ -23,6 +23,7 @@ class PromptMixin:
     name: str = ""
 
     def _get_prompts(self) -> t.Dict[str, PydanticPrompt]:
+        # 通过反射收集当前实例上所有类型为 PydanticPrompt 的属性，键为属性名
         prompts = {}
         for key, value in inspect.getmembers(self):
             if isinstance(value, PydanticPrompt):
@@ -93,7 +94,7 @@ class PromptMixin:
 
         prompts = self.get_prompts()
         for prompt_name, prompt in prompts.items():
-            # hash_hex = f"0x{hash(prompt) & 0xFFFFFFFFFFFFFFFF:016x}"
+            # 按「类名_提示名_语言」或「提示名_语言」命名，避免多类/多语言冲突
             if self.name == "":
                 file_name = os.path.join(path, f"{prompt_name}_{prompt.language}.json")
             else:
