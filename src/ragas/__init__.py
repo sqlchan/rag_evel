@@ -43,6 +43,7 @@ __all__ = [
 
 
 def __getattr__(name):
+    # 懒加载 experimental 子包：仅当用户访问 ragas.experimental 时才导入
     if name == "experimental":
         try:
             import ragas_experimental as experimental  # type: ignore

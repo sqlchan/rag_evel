@@ -144,7 +144,7 @@ async def aevaluate(
         metrics = [answer_relevancy, context_precision, faithfulness, context_recall]
 
     if isinstance(dataset, Dataset):
-        # remap column names from the dataset
+        # 列名重映射、v1 转 v2 后转为 EvaluationDataset 并做校验
         dataset = remap_column_names(dataset, column_map)
         dataset = convert_v1_to_v2_dataset(dataset)
         # validation
@@ -166,7 +166,7 @@ async def aevaluate(
     embeddings_changed: t.List[int] = []
     answer_correctness_is_set = -1
 
-    # loop through the metrics and perform initializations
+    # 遍历指标：补全未设置的 llm/embeddings、记录需在 finally 中还原的索引
     for i, metric in enumerate(metrics):
         # set llm and embeddings if not set
         if isinstance(metric, AspectCritic):
@@ -277,13 +277,13 @@ async def aevaluate(
         else:
             raise ValueError(f"Unsupported sample type {sample_type}")
 
-    # Return executor for cancellable execution if requested
+    # 若调用方需要可取消执行，则直接返回 Executor；否则等待全部完成并组装 scores
     if return_executor:
         return executor
 
     scores: t.List[t.Dict[str, t.Any]] = []
     try:
-        # get the results using async method
+        # 按提交顺序取回各 metric 的得分并按行按指标填入 scores
         results = await executor.aresults()
         if results == []:
             raise ExceptionInRunner()

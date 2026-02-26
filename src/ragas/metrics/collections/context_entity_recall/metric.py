@@ -92,14 +92,14 @@ class ContextEntityRecall(BaseMetric):
         Returns:
             MetricResult with entity recall score (0.0-1.0, higher is better)
         """
-        # Extract entities from reference (ground truth)
+        # 从参考答案中抽取实体集合（人名、地点、组织、日期等）
         reference_entities = await self._extract_entities(reference)
 
-        # Extract entities from retrieved contexts (combined)
+        # 从合并后的检索上下文中抽取实体集合
         combined_contexts = "\n".join(retrieved_contexts)
         context_entities = await self._extract_entities(combined_contexts)
 
-        # Calculate recall score
+        # 实体召回率 = |参考实体 ∩ 上下文实体| / |参考实体|
         recall_score = self._compute_recall_score(reference_entities, context_entities)
 
         return MetricResult(value=float(recall_score))

@@ -118,7 +118,7 @@ class ResponseGroundedness(BaseMetric):
         if not response.strip() or not context_str.strip():
             return MetricResult(value=0.0)
 
-        # Get ratings from both judges
+        # 双评委：分别对「回答是否基于上下文」打分（0/1/2），取平均提高稳定性
         judge1_rating = await self._get_judge_rating(
             self.judge1_prompt, response, context_str
         )
@@ -126,7 +126,7 @@ class ResponseGroundedness(BaseMetric):
             self.judge2_prompt, response, context_str
         )
 
-        # Average the scores (convert from 0,1,2 scale to 0.0-1.0)
+        # 将 0/1/2 刻度归一化到 0.0–1.0，再对两评委取平均
         score = self._average_scores(judge1_rating / 2.0, judge2_rating / 2.0)
 
         return MetricResult(value=float(score))

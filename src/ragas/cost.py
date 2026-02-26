@@ -181,7 +181,7 @@ class CostCallbackHandler(BaseCallbackHandler):
                 "No cost table or cost per token provided. Please provide a cost table if using multiple models or cost per token if using a single model"
             )
 
-        # sum up everything
+        # 按模型汇总所有调用的 token 用量
         first_usage = self.usage_data[0]
         total_table: t.Dict[str, TokenUsage] = {first_usage.model: first_usage}
         for usage in self.usage_data[1:]:
@@ -190,7 +190,7 @@ class CostCallbackHandler(BaseCallbackHandler):
             else:
                 total_table[usage.model] = usage
 
-        # caculate total cost
+        # 根据单价或 per_model_costs 计算总成本
         # if only one model is used
         if len(total_table) == 1:
             model_name = list(total_table)[0]

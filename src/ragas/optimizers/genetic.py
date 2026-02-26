@@ -128,12 +128,17 @@ class FeedbackMutationPromptGeneration(
 
 class GeneticOptimizer(Optimizer):
     """
+    遗传算法优化器：通过种群初始化、反馈变异、交叉变异与适应度评估，自动演化出更优的 prompt。
     A genetic algorithm optimizer that balances exploration and exploitation.
     """
 
+    # 逆向工程：从 (输入, 输出) 示例反推「标注员看到的指令」
     reverse_engineer_prompt = ReverseEngineerPrompt()
+    # 交叉：将两条父指令融合成一条子代指令
     cross_over_prompt = CrossOverPrompt()
+    # 根据错误样本生成「如何改指令」的反馈
     feedback_generation_prompt = FeedbackMutationPrompt()
+    # 根据反馈生成新指令
     feedback_mutation_prompt = FeedbackMutationPromptGeneration()
 
     def optimize(
@@ -160,10 +165,12 @@ class GeneticOptimizer(Optimizer):
                 f"Number of annotations should be greater than {MIN_ANNOTATIONS}. Please annotate {MIN_ANNOTATIONS - len(dataset)} more samples"
             )
 
+        # 遗传算法超参：种群大小、逆向工程每批示例数、反馈变异采样数
         population_size = config.get("population_size", 3)
         num_demonstrations = config.get("num_demonstrations", 3)
         sample_size = config.get("sample_size", 12)
 
+        # 创建优化回调组，便于追踪
         # new group for optimization
         optimization_generation_rm, optimization_generation_grp = new_group(
             name=RAGAS_OPTIMIZATION_GROUP,
@@ -188,6 +195,7 @@ class GeneticOptimizer(Optimizer):
             total=total_steps, desc="Overall Progress", dynamic_ncols=True
         ) as parent_pbar:
             parent_pbar.set_description(f"{stages[0]['name']} Step 1/{len(stages)}")
+            # 步骤1：从标注数据反推多条指令，构成初始种群（不含种子）
             initial_population = self.initialize_population(
                 dataset=dataset,
                 population_size=population_size - 1,
@@ -199,6 +207,7 @@ class GeneticOptimizer(Optimizer):
                 parent_pbar=parent_pbar,
             )
 
+            # 将当前 metric 的默认 prompt 作为种子加入种群
             # get the default prompt used in the metric as seed prompt
             if len(initial_population) > 0:
                 seed_prompts = {
@@ -208,6 +217,7 @@ class GeneticOptimizer(Optimizer):
                 }
                 initial_population.append(seed_prompts)
 
+            # 步骤2：对每个候选在子集上评估，对错误样本生成反馈并改写成新指令
             parent_pbar.set_description(f"{stages[1]['name']} Step 2/{len(stages)}")
             improved_prompts = self.feedback_mutation(
                 initial_population,
@@ -220,6 +230,7 @@ class GeneticOptimizer(Optimizer):
                 parent_pbar=parent_pbar,
             )
 
+            # 步骤3：用汉明距离选配对，对指令做交叉得到子代种群
             parent_pbar.set_description(f"{stages[2]['name']} Step 3/{len(stages)}")
             improved_prompts = self.cross_over_mutation(
                 candidates=improved_prompts,
@@ -231,6 +242,7 @@ class GeneticOptimizer(Optimizer):
                 parent_pbar=parent_pbar,
             )
 
+            # 步骤4：在完整标注集上计算 loss，选损失最小的候选为最优
             parent_pbar.set_description(f"{stages[3]['name']} Step 4/{len(stages)}")
             fitness_scores = self.evaluate_fitness(
                 candidates=improved_prompts,
@@ -242,6 +254,7 @@ class GeneticOptimizer(Optimizer):
                 raise_exceptions=raise_exceptions,
                 parent_pbar=parent_pbar,
             )
+        # 适应度越高（loss 越小）越好，取得分最高者
         best_candidate = improved_prompts[np.argmax(fitness_scores)]
 
         optimization_generation_rm.on_chain_end(
@@ -278,7 +291,9 @@ class GeneticOptimizer(Optimizer):
         )
 
         candidates = []
+        # 仅用已接受的标注做逆向工程
         dataset = dataset.filter(lambda x: x["is_accepted"])
+        # 按 metric_output 分层抽样，保证每批包含不同标签的示例
         batches = dataset.stratified_batches(
             batch_size=num_demonstrations,
             stratify_key="metric_output",
@@ -330,6 +345,7 @@ class GeneticOptimizer(Optimizer):
                 )
                 prompt_annotations[name].append({"input": input_, "output": output})
 
+        # 对每个 prompt 名称，用该批 (输入, 输出) 让 LLM 反推指令
         for prompt_name, examples in prompt_annotations.items():
             formatted_examples = FormattedExamples.from_examples(examples)
             instruction = await self.reverse_engineer_prompt.generate(
@@ -352,6 +368,7 @@ class GeneticOptimizer(Optimizer):
         return offspring.instruction
 
     def _set_instructions(self, candidates: t.Dict[str, str]):
+        """将候选指令写回 metric 的各个 prompt，用于后续评估。"""
         if self.metric is None:
             raise ValueError("No metric provided for optimization.")
         prompts = self.metric.get_prompts()
@@ -437,6 +454,7 @@ class GeneticOptimizer(Optimizer):
             inputs={"candidate": candidate},
             callbacks=callbacks,
         )
+        # 转为评估用数据集与真实标签
         batch, target = self._get_evaluation_dataset(dataset)
         results = self.evaluate_candidate(
             candidate=candidate,
@@ -505,6 +523,7 @@ class GeneticOptimizer(Optimizer):
             raise ValueError("No metric provided for optimization.")
 
         prediction = results.to_pandas()[self.metric.name].values.tolist()
+        # 找出预测与真实标签不一致的样本索引
         indices = [idx for idx in range(len(target)) if target[idx] != prediction[idx]]
         traces = [trace[self.metric.name] for trace in results.traces]
         if indices:
@@ -549,6 +568,7 @@ class GeneticOptimizer(Optimizer):
         if self.metric.output_type is None:
             raise ValueError("No output type provided for the metric.")
 
+        # 收集用于训练/评估的样本 id 与真实标签（二分类时未接受样本取反标签）
         training_ids = []
         y_true = []
         for idx, sample in enumerate(dataset):
@@ -633,7 +653,7 @@ class GeneticOptimizer(Optimizer):
             values = results.to_pandas()[self.metric.name].values
             y_pred = values.tolist() if isinstance(values, np.ndarray) else [values]
             y_pred = t.cast(t.List[float], y_pred)
-
+            # 用传入的 loss 函数计算该候选的损失，作为适应度依据
             loss = loss_fn(y_true, y_pred)
             losses.append(loss)
 
@@ -684,6 +704,7 @@ class GeneticOptimizer(Optimizer):
             callbacks=callbacks,
         )
         run_id = cross_over_rm.run_id
+        # 每个候选在每条样本上的对/错 → 0/1 向量，用于算汉明距离
         prediction_vectors = []
         for candidate in candidates:
             results = self.evaluate_candidate(
@@ -715,6 +736,7 @@ class GeneticOptimizer(Optimizer):
         offspring_candidates = []
         for idx, candidate in enumerate(candidates):
             parent_x = candidates[idx]
+            # 选与当前个体预测向量最相似的另一个体作为 parent_y，做交叉
             parent_y = candidates[np.argmin(distance_matrix[idx])]
             exec.submit(
                 self._cross_over_chain,

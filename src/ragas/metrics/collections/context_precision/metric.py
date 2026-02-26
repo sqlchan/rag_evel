@@ -100,10 +100,10 @@ class ContextPrecisionWithReference(BaseMetric):
         if not retrieved_contexts:
             raise ValueError("retrieved_contexts cannot be empty")
 
-        # Evaluate each retrieved context
+        # 对每条检索到的 context 判断是否对得到「答案」有用（0/1）
         verdicts = []
         for context in retrieved_contexts:
-            # Create input data and generate prompt
+            # 构造单条评估输入：问题、当前 context、参考答案
             input_data = ContextPrecisionInput(
                 question=user_input, context=context, answer=reference
             )
@@ -111,7 +111,7 @@ class ContextPrecisionWithReference(BaseMetric):
             result = await self.llm.agenerate(prompt_string, ContextPrecisionOutput)
             verdicts.append(result.verdict)
 
-        # Calculate average precision
+        # 按顺序计算平均精度（AP）：有用片段越靠前分数越高
         score = self._calculate_average_precision(verdicts)
         return MetricResult(value=float(score))
 

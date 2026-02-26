@@ -26,7 +26,7 @@ def new_group(
     tags = tags or []
     metadata = metadata or {}
 
-    # start evaluation chain
+    # 启动评估链：统一为 CallbackManager，设置 tags/metadata 并触发 on_chain_start
     if isinstance(callbacks, list):
         cm = CallbackManager.configure(inheritable_callbacks=callbacks)
     else:
@@ -101,6 +101,7 @@ class RagasTracer(BaseCallbackHandler):
             children=[],
         )
 
+        # 若有父 run，将当前 run_id 加入父节点的 children，形成树形追踪
         if parent_run_id and str(parent_run_id) in self.traces:
             self.traces[str(parent_run_id)].children.append(str(run_id))
 

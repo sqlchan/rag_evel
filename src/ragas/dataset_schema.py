@@ -142,7 +142,7 @@ class MultiTurnSample(BaseSample):
                 has_seen_ai_message = True
 
             elif isinstance(m, ToolMessage):
-                # Rule 1: ToolMessage must be preceded by an AIMessage somewhere in the conversation
+                # 规则1：ToolMessage 之前对话中必须出现过 AIMessage
                 if not has_seen_ai_message:
                     raise ValueError(
                         "ToolMessage must be preceded by an AIMessage somewhere in the conversation."
@@ -153,7 +153,7 @@ class MultiTurnSample(BaseSample):
                     prev_message = messages[i - 1]
 
                     if isinstance(prev_message, AIMessage):
-                        # Rule 3: If following AIMessage, that message must have tool_calls
+                        # 规则3：紧接 AIMessage 时，该条必须有 tool_calls
                         if not prev_message.tool_calls:
                             raise ValueError(
                                 "ToolMessage must follow an AIMessage where tools were called."

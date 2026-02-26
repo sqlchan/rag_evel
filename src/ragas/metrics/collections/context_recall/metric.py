@@ -106,23 +106,23 @@ class ContextRecall(BaseMetric):
         if not retrieved_contexts:
             raise ValueError("retrieved_contexts cannot be empty")
 
-        # Combine contexts into a single string
+        # 将多条检索上下文合并为一段文本，供 LLM 做归因判断
         context = "\n".join(retrieved_contexts) if retrieved_contexts else ""
 
-        # Create input data and generate prompt
+        # 构造输入：问题、合并后的 context、参考答案（其陈述将被逐条归因）
         input_data = ContextRecallInput(
             question=user_input, context=context, answer=reference
         )
         prompt_string = self.prompt.to_string(input_data)
 
-        # Get classifications from LLM
+        # 调用 LLM 对参考答案中的每条陈述做「是否可由 context 归因」的分类
         result = await self.llm.agenerate(prompt_string, ContextRecallOutput)
 
-        # Calculate score
+        # 若无分类结果则返回 NaN
         if not result.classifications:
             return MetricResult(value=np.nan)
 
-        # Count attributions
+        # 召回率 = 可归因陈述数 / 总陈述数
         attributions = [c.attributed for c in result.classifications]
         score = sum(attributions) / len(attributions) if attributions else np.nan
 

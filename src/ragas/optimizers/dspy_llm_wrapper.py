@@ -5,20 +5,14 @@ from ragas.llms.base import BaseRagasLLM
 
 class RagasDSPyLM:
     """
+    将 Ragas LLM 包装成 DSPy 可调用的 LM 接口，供 MIPROv2 等优化流程使用。
     Wrapper to make Ragas LLM compatible with DSPy.
-
-    DSPy expects LM objects to have specific methods for inference.
-    This wrapper adapts Ragas LLM to work with DSPy's optimization framework.
-
-    Parameters
-    ----------
-    ragas_llm : BaseRagasLLM
-        The Ragas LLM instance to wrap.
     """
 
     def __init__(self, ragas_llm: BaseRagasLLM):
         self.ragas_llm = ragas_llm
         self.history: t.List[t.Dict[str, t.Any]] = []
+
 
     def __call__(
         self,
@@ -50,6 +44,7 @@ class RagasDSPyLM:
         elif messages is None:
             raise ValueError("Either prompt or messages must be provided")
 
+        # DSPy 同步调用，内部用 asyncio.run 转成异步
         result = asyncio.run(self._generate(messages, **kwargs))
         return [result]
 
@@ -77,6 +72,7 @@ class RagasDSPyLM:
 
         result = await self.ragas_llm.generate(prompt_value)
 
+        # 从 Ragas 生成结果中取出文本
         if hasattr(result, "generations") and result.generations:
             generation = result.generations[0][0]
             if hasattr(generation, "text"):

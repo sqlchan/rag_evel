@@ -109,12 +109,12 @@ class AnswerRelevancy(BaseMetric):
         if not response:
             raise ValueError("response cannot be empty")
 
-        # Generate multiple questions from response
+        # 从回答反推「可由该回答回答的问题」，共 strictness 轮，并标记是否敷衍
         generated_questions = []
         noncommittal_flags = []
 
         for _ in range(self.strictness):
-            # Create input data and generate prompt
+            # 构造输入并调用 LLM 生成一个问题及 noncommittal 标记
             input_data = AnswerRelevanceInput(response=response)
             prompt_string = self.prompt.to_string(input_data)
             result = await self.llm.agenerate(prompt_string, AnswerRelevanceOutput)
@@ -134,12 +134,12 @@ class AnswerRelevancy(BaseMetric):
             await self.embeddings.aembed_text(user_input)
         ).reshape(1, -1)
 
-        # Embed the generated questions
+        # 将生成的问题批量嵌入
         gen_question_vec = np.asarray(
             await self.embeddings.aembed_texts(generated_questions)
         ).reshape(len(generated_questions), -1)
 
-        # Calculate cosine similarity
+        # 计算生成问题与原始问题的余弦相似度（相关性越高分数越高）
         norm = np.linalg.norm(gen_question_vec, axis=1) * np.linalg.norm(
             question_vec, axis=1
         )
@@ -150,7 +150,7 @@ class AnswerRelevancy(BaseMetric):
             / norm
         )
 
-        # Score is average cosine similarity, reduced to 0 if response is noncommittal
+        # 最终分数 = 平均相似度；若判定为完全敷衍则乘 0
         score = cosine_sim.mean() * int(not all_noncommittal)
 
         return MetricResult(value=float(score))

@@ -3,16 +3,17 @@ import os
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-# Load environment variables
+# 加载 .env 中的环境变量（如 OPENAI_API_KEY）
 load_dotenv(".env")
 
+# 默认使用的 OpenAI 模型
 DEFAULT_MODEL = "gpt-4.1-nano-2025-04-14"
 
 
 def get_client() -> AsyncOpenAI:
-    """Lazily create an AsyncOpenAI client, requiring the API key only when used.
+    """懒加载创建 AsyncOpenAI 客户端，仅在真正调用 API 时检查 API Key。
 
-    This avoids raising errors during module import (e.g., when running --help).
+    这样在仅执行 --help 等场景下导入模块不会因缺少 key 而报错。
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -22,6 +23,7 @@ def get_client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=api_key)
 
 
+# 折扣计算助手的系统提示：定义角色、折扣规则及 JSON 输出格式
 SYSTEM_PROMPT = """
 You are a discount calculation assistant. I will provide a customer profile and you must calculate their discount percentage and explain your reasoning.
 
@@ -43,8 +45,10 @@ Respond in JSON format only:
 
 
 async def run_prompt(prompt: str, model: str = DEFAULT_MODEL):
-    """Run the discount calculation prompt with the specified model."""
+    """使用指定模型运行折扣计算 prompt，返回助手回复的 JSON 文本。"""
+    # 按需创建 OpenAI 客户端
     client = get_client()
+    # 调用 Chat Completions API：强制 JSON 输出，system + user 消息
     response = await client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
@@ -53,14 +57,16 @@ async def run_prompt(prompt: str, model: str = DEFAULT_MODEL):
             {"role": "user", "content": prompt},
         ],
     )
+    # 取首条回复内容并去除首尾空白
     response = response.choices[0].message.content.strip()
     return response
 
 
 if __name__ == "__main__":
     import asyncio
-    
+
     async def main():
+        # 示例客户画像：用于本地运行时的演示输入
         customer_profile = """
         Customer Profile:
         - Name: Sarah Johnson
@@ -76,5 +82,5 @@ if __name__ == "__main__":
         print(customer_profile)
         print(f"\n=== Running Prompt with default model {DEFAULT_MODEL} ===")
         print(await run_prompt(customer_profile, model=DEFAULT_MODEL))
-    
+
     asyncio.run(main())

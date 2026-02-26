@@ -198,6 +198,7 @@ def get_or_init(
 
 
 def get_from_dict(data_dict: t.Dict, key: str, default=None) -> t.Any:
+    # 支持 "a.b.c" 形式的嵌套键取值，中间缺失或非 dict 则返回 default
     keys = key.split(".")
     current = data_dict
 
@@ -278,7 +279,7 @@ def num_tokens_from_string(
 
 def batched(iterable: t.Iterable, n: int) -> t.Iterator[t.Tuple]:
     """Batch data from the iterable into tuples of length n. The last batch may be shorter than n."""
-    # batched('ABCDEFG', 3) → ABC DEF G
+    # 将可迭代对象按 n 个一组切分，最后一组可能不足 n 个
     if n < 1:
         raise ValueError("n must be at least one")
     iterator = iter(iterable)

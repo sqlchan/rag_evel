@@ -44,8 +44,7 @@ RAGAS_DEBUG_TRACKING = "__RAGAS_DEBUG_TRACKING"
 
 @lru_cache(maxsize=1)
 def do_not_track() -> bool:  # pragma: no cover
-    # Returns True if and only if the environment variable is defined and has value True
-    # The function is cached for better performance.
+    # 是否禁用匿名统计：环境变量 RAGAS_DO_NOT_TRACK=true 时返回 True；结果带缓存
     return os.environ.get(RAGAS_DO_NOT_TRACK, str(False)).lower() == "true"
 
 
@@ -155,7 +154,8 @@ class AnalyticsBatcher:
     def _flush_loop(self) -> None:
         """Background thread that periodically flushes the buffer."""
         while self._running:
-            time.sleep(1)  # Check every second
+            time.sleep(1)  # 每秒检查一次
+            # 达到批量大小或超过刷新间隔则上报
             if (
                 len(self.buffer) >= self.BATCH_SIZE
                 or (time.time() - self.last_flush_time) > self.FLUSH_INTERVAL
@@ -176,7 +176,7 @@ class AnalyticsBatcher:
         if not events:
             return []
 
-        # Group events by their properties (except num_rows)
+        # 按 event_type、metrics、evaluation_type 分组，同组只保留一条并累加 num_rows
         grouped_events = {}
         for event in events:
             key = (

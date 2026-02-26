@@ -54,6 +54,7 @@ class TiktokenWrapper(BaseTokenizer):
 
         If none provided, defaults to "o200k_base" encoding.
         """
+        # 优先级：显式 encoding > model_name > encoding_name > 默认 o200k_base
         if encoding is not None:
             self._encoding = encoding
         elif model_name is not None:

@@ -71,6 +71,7 @@ class BinaryMetricLoss(Loss):
         if len(predicted) != len(actual):
             raise ValueError("Predicted and actual lists must have the same length.")
 
+        # 二分类指标：accuracy 为正确率，f1_score 为 F1
         if self.metric == "accuracy":
             return self._accuracy(predicted, actual)
         elif self.metric == "f1_score":

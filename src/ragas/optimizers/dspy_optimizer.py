@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DSPyOptimizer(Optimizer):
     """
+    基于 DSPy MIPROv2 的提示优化器：联合优化指令与 few-shot 示例。
     Advanced prompt optimizer using DSPy's MIPROv2.
-
     MIPROv2 performs sophisticated prompt optimization by combining:
     - Instruction optimization (prompt engineering)
     - Demonstration optimization (few-shot examples)
@@ -170,6 +170,7 @@ class DSPyOptimizer(Optimizer):
         if self._dspy is None:
             raise RuntimeError("DSPy module not loaded.")
 
+        # 若启用缓存，先查 key，命中则直接返回
         if self.cache is not None:
             cache_key = self._generate_cache_key(dataset, loss, config)
             if self.cache.has_key(cache_key):
@@ -187,6 +188,7 @@ class DSPyOptimizer(Optimizer):
             setup_dspy_llm,
         )
 
+        # 将当前 Ragas LLM 设为 DSPy 默认 LM
         setup_dspy_llm(self._dspy, self.llm)
 
         prompts = self.metric.get_prompts()
@@ -195,10 +197,12 @@ class DSPyOptimizer(Optimizer):
         for prompt_name, prompt in prompts.items():
             logger.info(f"Optimizing prompt: {prompt_name}")
 
+            # Ragas Prompt → DSPy Signature → Predict 模块
             signature = pydantic_prompt_to_dspy_signature(prompt)
             module = self._dspy.Predict(signature)
             examples = ragas_dataset_to_dspy_examples(dataset, prompt_name)
 
+            # MIPROv2 超参（候选数、demo 数、温度、auto 等）
             teleprompter = self._dspy.MIPROv2(
                 num_candidates=self.num_candidates,
                 max_bootstrapped_demos=self.max_bootstrapped_demos,
@@ -214,14 +218,17 @@ class DSPyOptimizer(Optimizer):
                 metric_threshold=self.metric_threshold,
             )
 
+            # Ragas Loss 转为 DSPy 的「分数越高越好」的 metric
             metric_fn = create_dspy_metric(loss, dataset.name)
 
+            # 执行 MIPROv2 编译：在 trainset 上优化，以 metric_fn 为目标
             optimized = teleprompter.compile(
                 module,
                 trainset=examples,
                 metric=metric_fn,
             )
 
+            # 从编译后的模块中抽出优化后的指令字符串
             optimized_instruction = self._extract_instruction(optimized)
             optimized_prompts[prompt_name] = optimized_instruction
 
@@ -229,6 +236,7 @@ class DSPyOptimizer(Optimizer):
                 f"Optimized prompt for {prompt_name}: {optimized_instruction[:100]}..."
             )
 
+        # 若启用缓存，将本次优化结果写入
         if self.cache is not None:
             cache_key = self._generate_cache_key(dataset, loss, config)
             self.cache.set(cache_key, optimized_prompts)
@@ -238,17 +246,8 @@ class DSPyOptimizer(Optimizer):
 
     def _extract_instruction(self, optimized_module: t.Any) -> str:
         """
+        从 MIPROv2 编译后的 DSPy 模块中取出优化后的指令字符串。
         Extract the optimized instruction from DSPy module.
-
-        Parameters
-        ----------
-        optimized_module : Any
-            The optimized DSPy module from MIPROv2.
-
-        Returns
-        -------
-        str
-            The optimized instruction string.
         """
         if hasattr(optimized_module, "signature"):
             sig = optimized_module.signature
@@ -269,21 +268,8 @@ class DSPyOptimizer(Optimizer):
         config: t.Dict[t.Any, t.Any],
     ) -> str:
         """
+        根据 metric、数据集哈希、loss、优化器参数生成唯一缓存 key（SHA256）。
         Generate a unique cache key for optimization results.
-
-        Parameters
-        ----------
-        dataset : SingleMetricAnnotation
-            Annotated dataset with ground truth scores.
-        loss : Loss
-            Loss function to optimize.
-        config : Dict[Any, Any]
-            Additional configuration parameters.
-
-        Returns
-        -------
-        str
-            SHA256 hash of the optimization parameters.
         """
         if self.metric is None:
             raise ValueError("Metric must be set to generate cache key")

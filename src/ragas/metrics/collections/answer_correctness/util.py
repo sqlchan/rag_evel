@@ -8,7 +8,7 @@ from ragas.prompt.metrics.base_prompt import BasePrompt
 
 
 class StatementGeneratorInput(BaseModel):
-    """Input model for statement generation."""
+    """陈述生成步骤的输入：问题与待拆解的答案文本。"""
 
     question: str = Field(..., description="The question being answered")
     answer: str = Field(
@@ -84,7 +84,7 @@ class CorrectnessClassifierInput(BaseModel):
 class CorrectnessClassifierPrompt(
     BasePrompt[CorrectnessClassifierInput, ClassificationWithReason]
 ):
-    """Prompt for classifying statements as TP/FP/FN."""
+    """将回答中的陈述相对参考答案分类为 TP（支持）/ FP（多余）/ FN（遗漏）。"""
 
     input_model = CorrectnessClassifierInput
     output_model = ClassificationWithReason

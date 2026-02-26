@@ -38,8 +38,7 @@ class BaseMetric(SimpleBaseMetric, NumericValidator):
         """Initialize the base metric with validation."""
         super().__init__(name=name, allowed_values=allowed_values)
 
-        # Validate components only if the metric defines them
-        # Check if this instance has these attributes after initialization
+        # 仅当子类定义了 llm/embeddings 时才做组件校验（保证使用现代 Instructor LLM / Embedding）
         if hasattr(self, "llm"):
             self._validate_llm()
         if hasattr(self, "embeddings"):

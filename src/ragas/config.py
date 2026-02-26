@@ -21,6 +21,7 @@ class DemonstrationConfig(BaseModel):
 
     @field_validator("embedding")
     def validate_embedding(cls, v):
+        # 示例检索依赖嵌入模型，必须为 BaseRagasEmbeddings 实例
         if not isinstance(v, BaseRagasEmbeddings):
             raise ValueError("embedding must be an instance of BaseRagasEmbeddings")
         return v

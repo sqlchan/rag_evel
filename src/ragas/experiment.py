@@ -153,7 +153,7 @@ class ExperimentWrapper:
         if self.name_prefix:
             name = f"{self.name_prefix}-{name}"
 
-        # Resolve backend
+        # 解析存储后端：优先用参数，否则用装饰器默认值，否则沿用 dataset 的后端
         experiment_backend = backend or self.default_backend
         if experiment_backend:
             resolved_backend = Experiment._resolve_backend(experiment_backend)
@@ -176,7 +176,7 @@ class ExperimentWrapper:
         try:
             progress_bar = tqdm(total=len(dataset), desc="Running experiment")
 
-            # Process all items
+            # 按完成顺序收集结果，非 None 则追加到实验视图
             for future in asyncio.as_completed(tasks):
                 try:
                     result = await future

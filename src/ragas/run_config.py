@@ -60,6 +60,7 @@ class RunConfig:
     seed: int = 42
 
     def __post_init__(self):
+        # 用指定 seed 初始化随机数生成器，供重采样等使用
         self.rng = np.random.default_rng(seed=self.seed)
 
 
@@ -77,7 +78,7 @@ def add_retry(fn: WrappedFn, run_config: RunConfig) -> WrappedFn:
     - The number of retry attempts and exception types to retry on are configured
       based on the RunConfig.
     """
-    # configure tenacity's after section wtih logger
+    # 按 RunConfig 配置指数退避重试：等待时间、最大重试次数、可重试异常类型
     if run_config.log_tenacity is not None:
         logger = logging.getLogger(f"ragas.retry.{fn.__name__}")
         tenacity_logger = after_log(logger, logging.DEBUG)

@@ -116,15 +116,15 @@ class AnswerAccuracy(BaseMetric):
                 "reference is missing. Please add reference to the test sample."
             )
 
-        # Get ratings from both judges
+        # 双评委打分：Judge1 为用户答案 vs 参考，Judge2 交换顺序以增强公平性
         judge1_rating = await self._get_judge_rating(
             self.judge1_prompt, user_input, response, reference
         )
         judge2_rating = await self._get_judge_rating(
             self.judge2_prompt, user_input, reference, response
-        )  # Note: swapped order for judge 2
+        )  # Judge2 将 user_answer 与 reference_answer 顺序对调
 
-        # Average the scores (convert from 0,2,4 scale to 0.0-1.0)
+        # 将 0/2/4 刻度归一化到 0.0–1.0，再对两评委取平均
         score = self._average_scores(judge1_rating / 4.0, judge2_rating / 4.0)
 
         return MetricResult(value=float(score))

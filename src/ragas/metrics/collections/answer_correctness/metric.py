@@ -167,27 +167,27 @@ class AnswerCorrectness(BaseMetric):
         Returns:
             MetricResult with correctness score (0.0-1.0)
         """
-        # Step 1: Generate statements from both response and reference
+        # Step 1: 将回答与参考答案分别拆解为原子陈述（便于后续逐条分类）
         response_statements = await self._generate_statements(user_input, response)
         reference_statements = await self._generate_statements(user_input, reference)
 
-        # Step 2: Calculate factuality score via TP/FP/FN classification
+        # Step 2: 对回答中的陈述做 TP/FP/FN 分类，并计算事实性 F1 分数
         if response_statements and reference_statements:
             classification = await self._classify_statements(
                 user_input, response_statements, reference_statements
             )
             factuality_score = self._compute_f1_score(classification)
         else:
-            # If no statements generated, assume perfect match
+            # 若任一侧未生成陈述，视为完全匹配，事实性给满分
             factuality_score = 1.0
 
-        # Step 3: Calculate semantic similarity score
+        # Step 3: 使用嵌入向量计算回答与参考的语义相似度（可选）
         if self.weights[1] == 0:
             similarity_score = 0.0
         else:
             similarity_score = await self._calculate_similarity(response, reference)
 
-        # Step 4: Combine scores with weighted average
+        # Step 4: 按权重合并事实性分数与相似度分数得到最终正确性分数
         final_score = np.average(
             [factuality_score, similarity_score],
             weights=self.weights,
@@ -219,12 +219,12 @@ class AnswerCorrectness(BaseMetric):
         return classification
 
     def _compute_f1_score(self, classification: ClassificationWithReason) -> float:
-        """Compute F1 score from TP/FP/FN classification."""
+        """根据 TP/FP/FN 分类结果计算 F-β 分数（默认 F1）。"""
         tp = len(classification.TP)
         fp = len(classification.FP)
         fn = len(classification.FN)
 
-        # Calculate precision and recall
+        # 计算精确率与召回率
         if tp + fp == 0:
             precision = 1.0 if fn == 0 else 0.0
         else:
@@ -235,7 +235,7 @@ class AnswerCorrectness(BaseMetric):
         else:
             recall = tp / (tp + fn)
 
-        # Calculate F-beta score
+        # 计算 F-β 分数（beta>1 更重视召回，beta<1 更重视精确率）
         if precision + recall == 0:
             return 0.0
 
@@ -249,8 +249,8 @@ class AnswerCorrectness(BaseMetric):
         return float(f_score)
 
     async def _calculate_similarity(self, response: str, reference: str) -> float:
-        """Calculate semantic similarity between response and reference using embeddings."""
-        # Type guard: embeddings must be non-None when similarity weight > 0
+        """使用嵌入模型计算回答与参考的余弦语义相似度。"""
+        # 当相似度权重>0 时，embeddings 必不为 None（在 __init__ 中已校验）
         if self.embeddings is None:
             raise RuntimeError("Embeddings required for similarity calculation")
 

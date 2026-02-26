@@ -182,6 +182,7 @@ def _make_pydantic_picklable(obj: Any) -> Any:
 
 
 def _generate_cache_key(func, args, kwargs):
+    # 排除 callbacks 等不参与缓存的键，再与函数名、args 一起生成 SHA256 缓存键
     filtered_kwargs = {k: v for k, v in kwargs.items() if k not in EXCLUDE_KEYS}
 
     key_data = {
@@ -221,7 +222,7 @@ def cacher(cache_backend: Optional[CacheInterface] = None):
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
             cache_key = _generate_cache_key(func, args, kwargs)
-
+            # 命中则直接返回缓存；未命中则执行并写入（instructor 结果需转成可序列化）
             if backend.has_key(cache_key):
                 logger.debug(f"Cache hit for {cache_key}")
                 return backend.get(cache_key)

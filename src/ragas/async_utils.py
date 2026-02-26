@@ -39,7 +39,7 @@ def apply_nest_asyncio() -> bool:
     try:
         loop = asyncio.get_running_loop()
         loop_type = type(loop).__name__
-
+        # uvloop 与 nest_asyncio 不兼容，不进行 patch
         if "uvloop" in loop_type.lower() or "uvloop" in str(type(loop)):
             logger.debug(
                 f"Skipping nest_asyncio.apply() for incompatible loop type: {loop_type}"
@@ -67,6 +67,7 @@ def as_completed(
 
     Returns an iterator of futures that completes as tasks finish.
     """
+    # 无并发限制则直接创建任务；否则用信号量限制同时运行数
     if max_workers == -1:
         tasks = [asyncio.create_task(coro) for coro in coroutines]
     else:

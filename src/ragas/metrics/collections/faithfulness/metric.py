@@ -113,18 +113,18 @@ class Faithfulness(BaseMetric):
                 "retrieved_contexts is missing. Please add retrieved_contexts to the test sample."
             )
 
-        # Step 1: Break response into atomic statements
+        # Step 1: 将回答拆解为原子陈述，便于逐条验证是否被上下文支持
         statements = await self._create_statements(user_input, response)
 
         if not statements:
-            # No statements generated - return NaN like legacy
+            # 无法生成陈述时与旧版一致返回 NaN
             return MetricResult(value=float("nan"))
 
-        # Step 2: Join all contexts and evaluate statements against them
+        # Step 2: 合并所有检索上下文，用 NLI 判断每条陈述是否可由上下文推断
         context_str = "\n".join(retrieved_contexts)
         verdicts = await self._create_verdicts(statements, context_str)
 
-        # Step 3: Compute faithfulness score
+        # Step 3: 忠实度 = 被支持的陈述数 / 总陈述数
         score = self._compute_score(verdicts)
 
         return MetricResult(value=float(score))
@@ -146,7 +146,7 @@ class Faithfulness(BaseMetric):
         return result
 
     def _compute_score(self, verdicts: NLIStatementOutput) -> float:
-        """Compute faithfulness score as ratio of faithful statements."""
+        """忠实度分数 = 被判定为忠实（verdict=1）的陈述数 / 总陈述数。"""
         if not verdicts.statements:
             return float("nan")
 

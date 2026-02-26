@@ -35,6 +35,7 @@ def get_supported_metric_type(ds: EvaluationDataset):
 
 
 def validate_required_columns(ds: EvaluationDataset, metrics: t.Sequence[Metric]):
+    # 按数据集样本类型取各指标所需列，检查是否都在 ds.features() 中
     metric_type = get_supported_metric_type(ds)
     for m in metrics:
         required_columns = set(m.required_columns.get(metric_type, []))

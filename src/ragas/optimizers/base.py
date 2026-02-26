@@ -14,10 +14,13 @@ from ragas.run_config import RunConfig
 @dataclass
 class Optimizer(ABC):
     """
+    所有优化器的抽象基类。
     Abstract base class for all optimizers.
     """
 
+    # 待优化的指标（须带 LLM，用于评估与生成）
     metric: t.Optional[MetricWithLLM] = None
+    # 用于生成/评估的 Ragas LLM
     llm: t.Optional[BaseRagasLLM] = None
 
     @abstractmethod

@@ -87,24 +87,24 @@ class ToolCallF1(BaseMetric):
         if not isinstance(reference_tool_calls, list):
             raise ValueError("reference_tool_calls must be a list")
 
-        # Convert reference tool calls to set
+        # 将参考工具调用转为可哈希集合（名称+参数），便于集合运算
         expected: t.Set[t.Tuple[str, t.FrozenSet]] = set()
         for call in reference_tool_calls:
             expected.add(tool_call_to_hashable(call))
 
-        # Extract and convert predicted tool calls to set
+        # 从对话中收集所有 AIMessage 的 tool_calls 作为预测集合
         actual: t.Set[t.Tuple[str, t.FrozenSet]] = set()
         for msg in user_input:
             if isinstance(msg, AIMessage) and msg.tool_calls is not None:
                 for call in msg.tool_calls:
                     actual.add(tool_call_to_hashable(call))
 
-        # Calculate set-based metrics
+        # 集合运算求 TP（预测∩参考）、FP（多召）、FN（漏召）
         true_positives = len(actual & expected)
         false_positives = len(actual - expected)
         false_negatives = len(expected - actual)
 
-        # Calculate F1 score
+        # 由 P、R 计算 F1
         f1_score = calculate_f1_score(true_positives, false_positives, false_negatives)
 
         return MetricResult(value=round(f1_score, 4))

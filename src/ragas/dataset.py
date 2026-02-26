@@ -102,7 +102,7 @@ class DataTable(t.Generic[T]):
         # Store basic properties
         self.name = name
         self.data_model = data_model
-        # Resolve backend if string
+        # backend 为字符串时从注册表解析并传入 kwargs 构造；为实例时直接使用
         self.backend = self._resolve_backend(backend, **kwargs)
         self._data: t.List[t.Union[t.Dict, T]] = data or []
 
@@ -182,8 +182,7 @@ class DataTable(t.Generic[T]):
         # Resolve backend if string
         resolved_backend = cls._resolve_backend(backend, **kwargs)
 
-        # Backend always returns dicts
-        # Use the correct backend method based on the class type
+        # 后端统一返回 dict 列表；按 DATATABLE_TYPE 选择 load_dataset 或 load_experiment
         datatable_type = getattr(cls, "DATATABLE_TYPE", None)
         if datatable_type == "Experiment":
             dict_data = resolved_backend.load_experiment(name)

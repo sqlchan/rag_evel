@@ -109,6 +109,7 @@ class AIMessage(Message):
         """
         Returns a dictionary representation of the AI message.
         """
+        # 无 tool_calls 时 content 为字符串；有则转为 {text, tool_calls} 便于序列化
         content = (
             self.content
             if self.tool_calls is None

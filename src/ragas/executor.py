@@ -112,7 +112,7 @@ class Executor:
         if not self.jobs:
             return []
 
-        # Make a copy of jobs to process and clear the original list to prevent re-execution
+        # 复制任务列表并清空原列表，避免重复执行
         jobs_to_process = self.jobs.copy()
         self.jobs.clear()
 
@@ -198,6 +198,7 @@ class Executor:
         This is the async entry point for executing async jobs when already in an async context.
         """
         results = await self._process_jobs()
+        # 按提交顺序（第一维 counter）排序后只返回结果值
         sorted_results = sorted(results, key=lambda x: x[0])
         return [r[1] for r in sorted_results]
 

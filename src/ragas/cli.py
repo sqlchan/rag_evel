@@ -245,12 +245,12 @@ def load_eval_module(eval_path: str) -> Any:
         error(f"Error: Evaluation file not found: {eval_path_obj}")
         raise typer.Exit(1)
 
-    # Add the eval directory to Python path so imports work
+    # 将评估文件所在目录加入 sys.path，便于模块内 import
     eval_dir = eval_path_obj.parent
     if str(eval_dir) not in sys.path:
         sys.path.insert(0, str(eval_dir))
 
-    # Load the module
+    # 用 importlib 从文件路径加载模块（不依赖包结构）
     spec = importlib.util.spec_from_file_location("eval_module", eval_path_obj)
     if spec is None or spec.loader is None:
         error(f"Error: Could not load evaluation file: {eval_path_obj}")
@@ -398,7 +398,7 @@ def evals(
         experiment_func = None
         input_data_class = None
 
-        # Look for project and experiment in the module
+        # 在模块中查找 project（提供 get_dataset/get_experiment）和带 run_async 的实验函数
         for attr_name in dir(eval_module):
             attr = getattr(eval_module, attr_name)
             # TODO: Project class not implemented yet
@@ -408,7 +408,7 @@ def evals(
                 project = attr
             elif hasattr(attr, "run_async"):
                 experiment_func = attr
-                # Get input type from the experiment function's signature
+                # 从实验函数首个参数注解推断输入数据类型
                 import inspect
 
                 sig = inspect.signature(attr)

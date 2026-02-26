@@ -96,10 +96,10 @@ class AgentGoalAccuracyWithReference(BaseMetric):
 
         conversation = self._format_conversation(user_input)
 
-        # Step 1: Infer the end state from the workflow
+        # Step 1: 从对话中推断用户目标与工作流最终状态
         workflow_result = await self._infer_goal_outcome(conversation)
 
-        # Step 2: Compare the end state with reference
+        # Step 2: 将实际达成的状态与参考结果比较，得到 0/1 判定
         verdict = await self._compare_outcomes(reference, workflow_result.end_state)
 
         return MetricResult(value=float(verdict))
@@ -199,10 +199,10 @@ class AgentGoalAccuracyWithoutReference(BaseMetric):
 
         conversation = self._format_conversation(user_input)
 
-        # Step 1: Infer the user goal and end state from the workflow
+        # Step 1: 从对话推断用户目标与最终状态（无参考模式）
         workflow_result = await self._infer_goal_outcome(conversation)
 
-        # Step 2: Compare the inferred goal with the end state
+        # Step 2: 比较「推断出的用户目标」与「实际达成的状态」是否一致
         verdict = await self._compare_outcomes(
             workflow_result.user_goal, workflow_result.end_state
         )

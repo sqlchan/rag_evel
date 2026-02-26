@@ -132,21 +132,20 @@ class FactualCorrectness(BaseMetric):
                 "reference is missing. Please add reference to the test sample."
             )
 
-        # Step 1: Get claim verifications to match legacy behavior exactly
-        # Legacy always does: decompose response → verify against reference
+        # Step 1: 分解回答为 claims，并在参考文本上做 NLI 验证（response → reference）
         reference_response = await self._decompose_and_verify_claims(
             response, reference
         )
 
         if self.mode != "precision":
-            # For recall and f1, also do: decompose reference → verify against response
+            # recall/f1 模式还需：分解参考为 claims，在回答上验证（reference → response），用于算 FN
             response_reference = await self._decompose_and_verify_claims(
                 reference, response
             )
         else:
             response_reference = np.array([], dtype=bool)
 
-        # Step 2: Compute TP, FP, FN exactly like legacy
+        # Step 2: 由验证结果汇总 TP、FP、FN
         tp = int(np.sum(reference_response))
         fp = int(np.sum(~reference_response))
         if self.mode != "precision":
@@ -154,7 +153,7 @@ class FactualCorrectness(BaseMetric):
         else:
             fn = 0
 
-        # Step 3: Compute final score based on mode
+        # Step 3: 按 mode 计算最终分数（precision / recall / F-β）
         if self.mode == "precision":
             score = tp / (tp + fp + 1e-8)
         elif self.mode == "recall":

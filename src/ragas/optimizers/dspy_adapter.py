@@ -8,14 +8,8 @@ from ragas.prompt.pydantic_prompt import PydanticPrompt
 
 def setup_dspy_llm(dspy: t.Any, ragas_llm: BaseRagasLLM) -> None:
     """
+    将 Ragas LLM 包装为 DSPy 可用的 LM，并设为 DSPy 全局默认 LM。
     Configure DSPy to use Ragas LLM.
-
-    Parameters
-    ----------
-    dspy : Any
-        The DSPy module.
-    ragas_llm : BaseRagasLLM
-        Ragas LLM instance to use for DSPy operations.
     """
     from ragas.optimizers.dspy_llm_wrapper import RagasDSPyLM
 
@@ -27,17 +21,8 @@ def pydantic_prompt_to_dspy_signature(
     prompt: PydanticPrompt[t.Any, t.Any],
 ) -> t.Type[t.Any]:
     """
+    将 Ragas 的 PydanticPrompt（input_model/output_model/instruction）转为 DSPy 的 Signature 类。
     Convert Ragas PydanticPrompt to DSPy Signature.
-
-    Parameters
-    ----------
-    prompt : PydanticPrompt
-        The Ragas prompt to convert.
-
-    Returns
-    -------
-    Type[dspy.Signature]
-        A DSPy Signature class.
     """
     try:
         import dspy
@@ -49,16 +34,19 @@ def pydantic_prompt_to_dspy_signature(
 
     fields = {}
 
+    # 输入字段 → dspy.InputField
     for name, field_info in prompt.input_model.model_fields.items():
         fields[name] = dspy.InputField(
             desc=field_info.description or "",
         )
 
+    # 输出字段 → dspy.OutputField
     for name, field_info in prompt.output_model.model_fields.items():
         fields[name] = dspy.OutputField(
             desc=field_info.description or "",
         )
 
+    # 动态创建 Signature 子类，__doc__ 存 instruction
     signature_class = type(
         f"{prompt.__class__.__name__}Signature",
         (dspy.Signature,),
@@ -73,19 +61,8 @@ def ragas_dataset_to_dspy_examples(
     prompt_name: str,
 ) -> t.List[t.Any]:
     """
+    从 Ragas 单指标标注数据集中按 prompt 名称抽取 (输入, 输出)，转为 DSPy Example 列表。
     Convert Ragas annotated dataset to DSPy examples.
-
-    Parameters
-    ----------
-    dataset : SingleMetricAnnotation
-        The annotated dataset with ground truth scores.
-    prompt_name : str
-        The name of the prompt to extract examples for.
-
-    Returns
-    -------
-    List[dspy.Example]
-        List of DSPy examples for training.
     """
     try:
         import dspy
@@ -107,6 +84,7 @@ def ragas_dataset_to_dspy_examples(
             continue
 
         prompt_input = prompt_data["prompt_input"]
+        # 优先使用人工编辑后的输出
         prompt_output = (
             prompt_data["edited_output"]
             if prompt_data["edited_output"]
@@ -119,6 +97,7 @@ def ragas_dataset_to_dspy_examples(
         else:
             example_dict["output"] = prompt_output
 
+        # 标记哪些键为输入，其余为输出
         input_keys = list(prompt_input.keys())
         example = dspy.Example(**example_dict).with_inputs(*input_keys)
         examples.append(example)
@@ -130,22 +109,9 @@ def create_dspy_metric(
     loss: Loss, metric_name: str
 ) -> t.Callable[[t.Any, t.Any], float]:
     """
-    Convert Ragas Loss function to DSPy metric.
-
-    DSPy expects a metric function with signature: metric(example, prediction) -> float
-    where higher is better.
-
-    Parameters
-    ----------
-    loss : Loss
-        The Ragas loss function.
-    metric_name : str
-        Name of the metric being optimized.
-
-    Returns
-    -------
-    Callable[[Any, Any], float]
-        A DSPy-compatible metric function.
+    将 Ragas 的 Loss(y_true, y_pred) 封装成 DSPy 的 metric(example, prediction)；
+    DSPy 约定分数越高越好，故对 loss 取负。
+    Convert Ragas Loss function to DSPy metric (higher is better).
     """
 
     def dspy_metric(example: t.Any, prediction: t.Any) -> float:
@@ -156,7 +122,7 @@ def create_dspy_metric(
             return 0.0
 
         loss_value = loss([predicted], [ground_truth])
-
+        # DSPy 希望分数越大越好，因此返回负的 loss
         return -float(loss_value)
 
     return dspy_metric
