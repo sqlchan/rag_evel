@@ -2,7 +2,7 @@
 
 ## 摘要分数（Summarization Score）
 
-**Summarization Score** 衡量摘要（`response`）对 `reference_contexts` 中重要信息的保留程度。思路是：好的摘要应包含上下文中所有重要信息。
+**Summarization Score** 衡量摘要（`response`）对 `reference_contexts` 中重要信息的保留程度。思路是：好的摘要应包含上下文中所有重要信息。 
 
 步骤：先从上下文中抽取重要关键短语，用其生成一组问题，这些问题的答案在上下文中恒为“是”(1)。再对摘要问同样的问题，摘要分数 = 正确回答数 / 总问题数。
 

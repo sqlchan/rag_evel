@@ -5,7 +5,7 @@
 **Answer Accuracy** 衡量模型回答与给定问题的参考答案的一致程度。通过两个不同的「LLM-as-a-Judge」提示各自返回 0/2/4 的评分，再映射到 [0,1] 并取两次评分的平均。分数越高表示回答与参考越一致。  
 - 0：回答不准确或未回答与参考相同的问题。  
 - 2：部分一致。  
-- 4：完全一致。  
+- 4：完全一致。   
 
 示例与计算步骤见 [nvidia_metrics.md](nvidia_metrics.md)。与 Answer Correctness、Rubric Score 的对比亦见该文档。
 

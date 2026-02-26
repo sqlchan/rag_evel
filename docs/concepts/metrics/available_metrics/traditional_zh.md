@@ -16,7 +16,7 @@
 
 `ExactMatch` 检查 response 与 reference 是否逐字相同。完全一致为 1，否则为 0。适用于工具调用参数等需严格一致的场景。详见 [traditional.md](traditional.md)。
 
-## 字符串包含（String Presence）
+## 字符串包含（String Presence） 
 
 `StringPresence` 检查 response 是否包含 reference 文本。包含为 1，否则为 0。适用于关键词/短语必须出现的情形。详见 [traditional.md](traditional.md)。
 

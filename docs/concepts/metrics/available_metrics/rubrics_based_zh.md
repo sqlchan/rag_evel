@@ -9,7 +9,7 @@
 
 ## 领域级量表（Domain-Specific Rubrics）
 
-当希望对所有样本使用同一套评估准则时使用 `DomainSpecificRubrics`。可无参考（默认）或有参考评估；支持自定义量表；支持带 `retrieved_contexts` 的评估。便捷类：`RubricsScoreWithoutReference`、`RubricsScoreWithReference`。
+当希望对所有样本使用同一套评估准则时使用 `DomainSpecificRubrics`。可无参考（默认）或有参考评估；支持自定义量表；支持带 `retrieved_contexts` 的评估。便捷类：`RubricsScoreWithoutReference`、`RubricsScoreWithReference`。 
 
 ## 默认量表
 

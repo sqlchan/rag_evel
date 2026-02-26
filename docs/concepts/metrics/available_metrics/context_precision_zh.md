@@ -12,7 +12,7 @@ $$
 \text{Precision@k} = {\text{true positives@k} \over  (\text{true positives@k} + \text{false positives@k})}
 $$
 
-其中 $K$ 为 `retrieved_contexts` 中的块总数，$v_k \in \{0, 1\}$ 为排名 $k$ 处的相关性指示。
+其中 $K$ 为 `retrieved_contexts` 中的块总数，$v_k \in 0, 1$ 为排名 $k$ 处的相关性指示。
 
 ## 示例
 
@@ -37,6 +37,6 @@ $$
 
 IDBasedContextPrecision 通过比较检索上下文 ID 与参考上下文 ID 直接衡量精确率，适用于有文档唯一 ID 且不想比较正文内容的场景。公式：
 
-$$ \text{ID-Based Context Precision} = \frac{\text{出现在参考上下文 ID 中的检索上下文 ID 数}}{\text{检索上下文 ID 总数}} $$
+$$ \text{ID-Based Context Precision} = \frac{\text{出现在参考上下文 ID 中的检索上下文 ID 数}}{\text{检索上下文 ID 总数}} $$ 
 
 详细示例与 Legacy API 见 [context_precision.md](context_precision.md)。

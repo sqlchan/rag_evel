@@ -16,4 +16,4 @@
 
 ## 实例级量表评分（Instance specific rubrics scoring）
 
-对数据集中每条样本使用**不同**量表进行评估（每条样本可带自己的 rubric）。与“全数据集共用同一量表”的 Rubric Based 不同。示例与用法见 [general_purpose.md](general_purpose.md)。
+对数据集中每条样本使用**不同**量表进行评估（每条样本可带自己的 rubric）。与“全数据集共用同一量表”的 Rubric Based 不同。示例与用法见 [general_purpose.md](general_purpose.md)。  

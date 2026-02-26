@@ -19,7 +19,7 @@ $$
 
 ## 非基于 LLM 的上下文召回率
 
-`NonLLMContextRecall` 使用 `retrieved_contexts` 和 `reference_contexts` 计算，分数在 0 到 1 之间，越高越好。通过非 LLM 的字符串比较判断检索上下文是否相关。
+`NonLLMContextRecall` 使用 `retrieved_contexts` 和 `reference_contexts` 计算，分数在 0 到 1 之间，越高越好。通过非 LLM 的字符串比较判断检索上下文是否相关。 
 
 ## 基于 ID 的上下文召回率
 

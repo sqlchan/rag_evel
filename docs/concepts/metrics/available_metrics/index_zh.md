@@ -2,7 +2,7 @@
 
 Ragas 提供一组评估指标，用于衡量 LLM 应用的性能。这些指标旨在帮助你客观度量应用表现，并覆盖不同应用与任务，如 RAG 与智能体工作流。
 
-每个指标本质上都是为评估应用某一方面而设计的范式。基于 LLM 的指标可能进行一次或多次 LLM 调用来得到分数或结果。你也可以用 Ragas 修改或编写自己的指标。
+每个指标本质上都是为评估应用某一方面而设计的范式。基于 LLM 的指标可能进行一次或多次 LLM 调用来得到分数或结果。你也可以用 Ragas 修改或编写自己的指标。 
 
 ## 检索增强生成
 - [上下文精确率](context_precision_zh.md)
@@ -45,7 +45,7 @@ Ragas 提供一组评估指标，用于衡量 LLM 应用的性能。这些指标
 
 ## 通用
 
-- [方面批评](general_purpose_zh.md#aspect-critic)
+- [方面批评](general_purpose_zh.md#aspect-critic) 
 - [简单准则评分](general_purpose_zh.md#simple-criteria-scoring)
 - [基于量表的评分](general_purpose_zh.md#rubrics-based-scoring)
 - [实例级量表评分](general_purpose_zh.md#instance-specific-rubrics-scoring)

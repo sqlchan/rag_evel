@@ -14,9 +14,10 @@
 ### 计算方式
 
 TP/FP/FN 定义：  
+
 - TP：response 中且出现在 reference 中的陈述数  
 - FP：response 中有但不在 reference 中的陈述数  
-- FN：reference 中有但不在 response 中的陈述数  
+- FN：reference 中有但不在 response 中的陈述数
 
 再用精确率、召回率、F1 公式计算。
 
@@ -25,7 +26,7 @@ TP/FP/FN 定义：
 **Atomicity**：句子被拆成多细的陈述（高 atomicity = 更细、更多陈述；低 = 更少、更整句）。  
 **Coverage**：陈述对原句信息的覆盖程度（高 = 保留所有细节；低 = 只保留要点）。  
 
-组合使用可满足不同粒度的评估需求。
+组合使用可满足不同粒度的评估需求。 
 
 ## 旧版指标 API
 
