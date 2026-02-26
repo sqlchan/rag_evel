@@ -22,7 +22,7 @@
 
 例如：
 
-- 答案正确性：衡量检索增强生成（RAG）系统给出的答案是否准确。
+- 答案正确性：衡量检索增强生成（RAG）系统给出的答案是否准确。  
 - 引用准确性：评估 RAG 系统引用的参考文献是否被正确识别且相关。
 
 优化端到端指标能带来与用户期望直接对齐的可见改进。
@@ -45,16 +45,15 @@
 
 ## Ragas 中的指标类型
 
-<figure markdown="span">
-  ![按组件评估](../../../_static/imgs/metrics_mindmap.png){width="600"}
-  <figcaption>指标思维导图</figcaption>
-</figure>
+![按组件评估](../../../_static/imgs/metrics_mindmap.png){width="600"}
+
+指标思维导图
 
 **按底层机制，指标可分为两类**：
 
-&nbsp;&nbsp;&nbsp;&nbsp; **基于 LLM 的指标**：这类指标底层使用 LLM 进行评估，可能进行一次或多次 LLM 调用得到分数或结果。由于 LLM 对同一输入不一定返回相同结果，这类指标可能具有一定非确定性。另一方面，它们通常更准确、更接近人工评估。
+     **基于 LLM 的指标**：这类指标底层使用 LLM 进行评估，可能进行一次或多次 LLM 调用得到分数或结果。由于 LLM 对同一输入不一定返回相同结果，这类指标可能具有一定非确定性。另一方面，它们通常更准确、更接近人工评估。
 
-Ragas 中所有基于 LLM 的指标均继承自 `MetricWithLLM` 类。评分前需设置 LLM 对象。
+Ragas 中所有基于 LLM 的指标均继承自 `MetricWithLLM` 类。评分前需设置 LLM 对象。  
 
 ```python
 from ragas.metrics import FactualCorrectness
@@ -63,14 +62,13 @@ scorer = FactualCorrectness(llm=evaluation_llm)
 
 每个基于 LLM 的指标还配有使用[提示对象](./../../components/prompt_zh.md)编写的提示。你可根据领域和用例自定义这些提示。详见[修改指标中的提示](../../../howtos/customizations/metrics/modifying-prompts-metrics.md)指南。
 
-
-&nbsp;&nbsp;&nbsp;&nbsp; **非基于 LLM 的指标**：这类指标底层不使用 LLM 进行评估，具有确定性，可在不调用 LLM 的情况下评估 AI 应用表现。它们依赖传统方法（如字符串相似度、BLEU 分数等），因此与人工评估的相关性通常较低。
+     **非基于 LLM 的指标**：这类指标底层不使用 LLM 进行评估，具有确定性，可在不调用 LLM 的情况下评估 AI 应用表现。它们依赖传统方法（如字符串相似度、BLEU 分数等），因此与人工评估的相关性通常较低。
 
 Ragas 中所有非基于 LLM 的指标均继承自 `Metric` 类。
 
 **按所评估的数据类型，指标可大致分为**：
 
-&nbsp;&nbsp;&nbsp;&nbsp; **单轮指标**：基于用户与 AI 的单轮交互评估表现。Ragas 中支持单轮评估的指标均继承自 [SingleTurnMetric][ragas.metrics.base.SingleTurnMetric] 类，使用 `single_turn_ascore` 方法评分，并期望输入为 [Single Turn Sample][ragas.dataset_schema.SingleTurnSample] 对象。
+     **单轮指标**：基于用户与 AI 的单轮交互评估表现。Ragas 中支持单轮评估的指标均继承自 [SingleTurnMetric][ragas.metrics.base.SingleTurnMetric] 类，使用 `single_turn_ascore` 方法评分，并期望输入为 [Single Turn Sample][ragas.dataset_schema.SingleTurnSample] 对象。
 
 ```python
 from ragas.metrics import FactualCorrectness
@@ -79,7 +77,7 @@ scorer = FactualCorrectness()
 await scorer.single_turn_ascore(sample)
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp; **多轮指标**：基于用户与 AI 的多轮交互评估表现。Ragas 中支持多轮评估的指标均继承自 [MultiTurnMetric][ragas.metrics.base.MultiTurnMetric] 类，使用 `multi_turn_ascore` 方法评分，并期望输入为 [Multi Turn Sample][ragas.dataset_schema.MultiTurnSample] 对象。
+     **多轮指标**：基于用户与 AI 的多轮交互评估表现。Ragas 中支持多轮评估的指标均继承自 [MultiTurnMetric][ragas.metrics.base.MultiTurnMetric] 类，使用 `multi_turn_ascore` 方法评分，并期望输入为 [Multi Turn Sample][ragas.dataset_schema.MultiTurnSample] 对象。
 
 ```python
 from ragas.metrics import AgentGoalAccuracy
@@ -98,6 +96,7 @@ await scorer.multi_turn_ascore(sample)
 从预定义的类别列表中返回单个值，类别之间无隐含顺序。常见用途包括将输出分为通过/不通过或好/一般/差等。离散型指标可直接接受自定义提示，适合快速自定义评估。
 
 示例：
+
 ```python
 from ragas.metrics import discrete_metric
 
@@ -179,3 +178,4 @@ my_metric.score(responses=["short", "a bit longer", "the longest response"])  # 
 避免堆砌只能提供弱信号、妨碍清晰决策的指标。应选择较少但信号强、可靠的指标。例如：
 
 - 在对话 AI 中，使用单一指标如目标准确率（用户与 AI 交互的目标是否达成）作为系统表现的强代理，优于多个弱代理（如连贯性、有用性）。
+
